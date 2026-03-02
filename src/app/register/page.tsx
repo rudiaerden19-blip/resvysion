@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { registerOwner } from '@/lib/auth'
+import { registerOwner, loginOwner } from '@/lib/auth'
 
 function slugify(text: string) {
   return text
@@ -39,10 +39,8 @@ export default function RegisterPage() {
   }
 
   const nextStep = () => {
-    if (step === 1) {
-      if (!form.restaurantName.trim()) return setError('Vul de naam van je restaurant in')
-      if (!form.slug.trim()) return setError('Vul een URL-naam in')
-    }
+    if (!form.restaurantName.trim()) return setError('Vul de naam van je restaurant in')
+    if (!form.slug.trim()) return setError('Vul een URL-naam in')
     setStep(2)
   }
 
@@ -52,24 +50,38 @@ export default function RegisterPage() {
     if (form.password !== form.confirmPassword) return setError('Wachtwoorden komen niet overeen')
 
     setLoading(true)
-    const result = await registerOwner({
+    setError('')
+
+    // Stap 1: registreer
+    const regResult = await registerOwner({
       email: form.email,
       password: form.password,
       restaurantName: form.restaurantName,
       slug: form.slug,
       phone: form.phone,
     })
+
+    if (regResult.error) {
+      setLoading(false)
+      return setError(regResult.error)
+    }
+
+    // Stap 2: direct inloggen — geen email-bevestiging nodig
+    const loginResult = await loginOwner(form.email, form.password)
+
     setLoading(false)
 
-    if (result.error) return setError(result.error)
-    router.push(`/dashboard/${result.slug}`)
+    if (loginResult.error) {
+      return setError('Account aangemaakt maar inloggen mislukt. Probeer in te loggen.')
+    }
+
+    router.push(`/dashboard/${loginResult.user?.slug}`)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="text-3xl">🍽️</span>
@@ -113,11 +125,11 @@ export default function RegisterPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Jouw URL
+                  Jouw reservatie-URL
                   <span className="ml-2 text-xs text-gray-400 font-normal">Klanten reserveren op deze link</span>
                 </label>
                 <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500">
-                  <span className="px-3 py-3 bg-gray-50 text-gray-400 text-sm border-r border-gray-200 whitespace-nowrap">reserveer.be/</span>
+                  <span className="px-3 py-3 bg-gray-50 text-gray-400 text-sm border-r border-gray-200 whitespace-nowrap">resvysion.app/reserveer/</span>
                   <input
                     type="text"
                     value={form.slug}
@@ -140,7 +152,10 @@ export default function RegisterPage() {
 
               {error && <p className="text-red-500 text-sm bg-red-50 px-4 py-3 rounded-xl">{error}</p>}
 
-              <button onClick={nextStep} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700">
+              <button
+                onClick={nextStep}
+                className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors"
+              >
                 Volgende →
               </button>
             </div>
@@ -193,12 +208,12 @@ export default function RegisterPage() {
               <button
                 onClick={submit}
                 disabled={loading}
-                className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 disabled:opacity-60"
+                className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
               >
                 {loading ? '⏳ Account aanmaken...' : '🚀 Start gratis proefperiode'}
               </button>
 
-              <button onClick={() => setStep(1)} className="w-full text-gray-400 text-sm hover:text-gray-600">
+              <button onClick={() => setStep(1)} className="w-full text-gray-400 text-sm hover:text-gray-600 py-2">
                 ← Terug
               </button>
             </div>

@@ -33,7 +33,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="text-3xl">🍽️</span>
@@ -75,7 +74,7 @@ export default function LoginPage() {
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                <p className="text-red-600 text-sm">⚠️ {error}</p>
+                <p className="text-red-600 text-sm font-medium">{error}</p>
               </div>
             )}
 
